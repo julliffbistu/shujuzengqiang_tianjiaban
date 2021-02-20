@@ -46,11 +46,11 @@ def genaratePsf(length,angle):
     if angle<90 and angle>0:
         psf1=np.fliplr(psf1)
         anchor=(psf1.shape[1]-1,0)
-    elif angle>-90 and angle<0:#同理：往右下角移动
+    elif angle>-90 and angle<0:
         psf1=np.flipud(psf1)
         psf1=np.fliplr(psf1)
         anchor=(psf1.shape[1]-1,psf1.shape[0]-1)
-    elif anchor<-90:#同理：往左下角移动
+    elif angle<-90:
         psf1=np.flipud(psf1)
         anchor=(0,psf1.shape[0]-1)
     psf1=psf1/psf1.sum()
@@ -96,20 +96,24 @@ class DataAugment(object):
 
     def motion_blur_fun(self):
         if self.motionBlur:
-            lenth_pix = 4
-            angle_pix = 45
+            lenth_pix = random.randrange(0, 10)
+            angle_pix = random.randrange(0, 360)
+            print("lenth_pix 1, angle_pix 1: ", lenth_pix, angle_pix)
             kernel,anchor=genaratePsf(lenth_pix, angle_pix)
             dst1 = cv.filter2D(self.src,-1,kernel,anchor=anchor)
-            lenth_pix = 4
-            angle_pix = 45
+            lenth_pix = random.randrange(0, 10)
+            angle_pix = random.randrange(0, 360)
+            print("lenth_pix 2, angle_pix 2: ", lenth_pix, angle_pix)
             kernel,anchor=genaratePsf(lenth_pix, angle_pix)
             dst2 = cv.filter2D(self.flip_x,-1,kernel,anchor=anchor)
-            lenth_pix = 4
-            angle_pix = 45
+            lenth_pix = random.randrange(0, 10)
+            angle_pix = random.randrange(0, 360)
+            print("lenth_pix 3, angle_pix 3: ", lenth_pix, angle_pix)
             kernel,anchor=genaratePsf(lenth_pix, angle_pix)
             dst3 = cv.filter2D(self.flip_y,-1,kernel,anchor=anchor)
-            lenth_pix = 4
-            angle_pix = 45
+            lenth_pix = random.randrange(0, 10)
+            angle_pix = random.randrange(0, 360)
+            print("lenth_pix 4, angle_pix 4: ", lenth_pix, angle_pix)
             kernel,anchor=genaratePsf(lenth_pix, angle_pix)
             dst4 = cv.filter2D(self.flip_x_y,-1,kernel,anchor=anchor)
             
@@ -132,13 +136,17 @@ class DataAugment(object):
             enh_sha2 = ImageEnhance.Sharpness(image2)
             enh_sha3 = ImageEnhance.Sharpness(image3)
             enh_sha4 = ImageEnhance.Sharpness(image4)
-            sharpness = 3.0 * random.randrange(1000, 1300)*0.001
+            sharpness = 1.0 * random.randrange(800, 3000)*0.001
+            print("sharpness 1: ", sharpness)
             dst1 = enh_sha1.enhance(sharpness)
-            sharpness = 3.0 * random.randrange(1000, 1300)*0.001
+            sharpness = 1.0 * random.randrange(800, 3000)*0.001
+            print("sharpness 2: ", sharpness)
             dst2 = enh_sha2.enhance(sharpness)
-            sharpness = 3.0 * random.randrange(1000, 1300)*0.001
+            sharpness = 1.0 * random.randrange(800, 3000)*0.001
+            print("sharpness 3: ", sharpness)
             dst3 = enh_sha3.enhance(sharpness)
-            sharpness = 3.0 * random.randrange(1000, 1300)*0.001
+            sharpness = 1.0 * random.randrange(800, 3000)*0.001
+            print("sharpness 4: ", sharpness)
             dst4 = enh_sha4.enhance(sharpness)
             img1 = cv.cvtColor(np.asarray(dst1),cv.COLOR_RGB2BGR)
             img2 = cv.cvtColor(np.asarray(dst2),cv.COLOR_RGB2BGR)
@@ -164,13 +172,17 @@ class DataAugment(object):
             enh_sha2 = ImageEnhance.Color(image2)
             enh_sha3 = ImageEnhance.Color(image3)
             enh_sha4 = ImageEnhance.Color(image4)
-            color = 1.5 * random.randrange(1000, 1300)*0.001
+            color = 1.0 * random.randrange(8000, 15000)*0.0001
+            print("color 1: ", color)
             dst1 = enh_sha1.enhance(color)
-            color = 1.5 * random.randrange(1000, 1300)*0.001
+            color = 1.0 * random.randrange(8000, 15000)*0.0001
+            print("color 2: ", color)
             dst2 = enh_sha2.enhance(color)
-            color = 1.5 * random.randrange(1000, 1300)*0.001
+            color = 1.0 * random.randrange(8000, 15000)*0.0001
+            print("color 3: ", color)
             dst3 = enh_sha3.enhance(color)
-            color = 1.5 * random.randrange(1000, 1300)*0.001
+            color = 1.0 * random.randrange(8000, 15000)*0.0001
+            print("color 4: ", color)
             dst4 = enh_sha4.enhance(color)
             img1 = cv.cvtColor(np.asarray(dst1),cv.COLOR_RGB2BGR)
             img2 = cv.cvtColor(np.asarray(dst2),cv.COLOR_RGB2BGR)
@@ -196,13 +208,17 @@ class DataAugment(object):
             enh_sha2 = ImageEnhance.Contrast(image2)
             enh_sha3 = ImageEnhance.Contrast(image3)
             enh_sha4 = ImageEnhance.Contrast(image4)
-            contrast = 1.5 * random.randrange(1000, 1300)*0.001
+            contrast = 1.0 * random.randrange(8000, 15000)*0.0001
+            print("contrast 1: ", contrast)
             dst1 = enh_sha1.enhance(contrast)
-            contrast = 1.5 * random.randrange(1000, 1300)*0.001
+            contrast = 1.0 * random.randrange(8000, 15000)*0.0001
+            print("contrast 2: ", contrast)
             dst2 = enh_sha2.enhance(contrast)
-            contrast = 1.5 * random.randrange(1000, 1300)*0.001
+            contrast = 1.0 * random.randrange(8000, 15000)*0.0001
+            print("contrast 3: ", contrast)
             dst3 = enh_sha3.enhance(contrast)
-            contrast = 1.5 * random.randrange(1000, 1300)*0.001
+            contrast = 1.0 * random.randrange(8000, 15000)*0.0001
+            print("contrast 4: ", contrast)
             dst4 = enh_sha4.enhance(contrast)
             img1 = cv.cvtColor(np.asarray(dst1),cv.COLOR_RGB2BGR)
             img2 = cv.cvtColor(np.asarray(dst2),cv.COLOR_RGB2BGR)
