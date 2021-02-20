@@ -6,8 +6,55 @@ import sys
 import numpy as np
 import random
 import re
+import math
 from PIL import Image
 from PIL import ImageEnhance
+
+
+def genaratePsf(length,angle):
+    EPS=np.finfo(float).eps                                 
+    alpha = (angle-math.floor(angle/ 180) *180) /180* math.pi
+    cosalpha = math.cos(alpha)  
+    sinalpha = math.sin(alpha)  
+    if cosalpha < 0:
+        xsign = -1
+    elif angle == 90:
+        xsign = 0
+    else:  
+        xsign = 1
+    psfwdt = 1;  
+    #模糊核大小
+    sx = int(math.fabs(length*cosalpha + psfwdt*xsign - length*EPS))  
+    sy = int(math.fabs(length*sinalpha + psfwdt - length*EPS))
+    psf1=np.zeros((sy,sx))     
+    #psf1是左上角的权值较大，越往右下角权值越小的核。
+    #这时运动像是从右下角到左上角移动
+    half = length/2 
+    for i in range(0,sy):
+        for j in range(0,sx):
+            psf1[i][j] = i*math.fabs(cosalpha) - j*sinalpha
+            rad = math.sqrt(i*i + j*j) 
+            if  rad >= half and math.fabs(psf1[i][j]) <= psfwdt:  
+                temp = half - math.fabs((j + psf1[i][j] * sinalpha) / cosalpha)  
+                psf1[i][j] = math.sqrt(psf1[i][j] * psf1[i][j] + temp*temp)
+            psf1[i][j] = psfwdt + EPS - math.fabs(psf1[i][j]);  
+            if psf1[i][j] < 0:
+                psf1[i][j] = 0
+    #运动方向是往左上运动，锚点在（0，0）
+    anchor=(0,0)
+    #运动方向是往右上角移动，锚点一个在右上角    #同时，左右翻转核函数，使得越靠近锚点，权值越大
+    if angle<90 and angle>0:
+        psf1=np.fliplr(psf1)
+        anchor=(psf1.shape[1]-1,0)
+    elif angle>-90 and angle<0:#同理：往右下角移动
+        psf1=np.flipud(psf1)
+        psf1=np.fliplr(psf1)
+        anchor=(psf1.shape[1]-1,psf1.shape[0]-1)
+    elif anchor<-90:#同理：往左下角移动
+        psf1=np.flipud(psf1)
+        anchor=(0,psf1.shape[0]-1)
+    psf1=psf1/psf1.sum()
+    return psf1,anchor
 
 class DataAugment(object):
     def __init__(self, image_id):
@@ -17,6 +64,7 @@ class DataAugment(object):
         self.chgsharpnessfun = True
         self.chgcolorfun = True
         self.chgcontrastfun = True
+        self.motionBlur = True
         self.id = image_id
         img = cv.imread(str(self.id)+'.jpg')
         try:
@@ -45,6 +93,30 @@ class DataAugment(object):
             cv.imwrite(str(self.id)+'_flip_x'+'_Gaussian'+'.jpg', dst2)
             cv.imwrite(str(self.id)+'_flip_y'+'_Gaussian'+'.jpg', dst3)
             cv.imwrite(str(self.id)+'_flip_x_y'+'_Gaussian'+'.jpg', dst4)
+
+    def motion_blur_fun(self):
+        if self.motionBlur:
+            lenth_pix = 4
+            angle_pix = 45
+            kernel,anchor=genaratePsf(lenth_pix, angle_pix)
+            dst1 = cv.filter2D(self.src,-1,kernel,anchor=anchor)
+            lenth_pix = 4
+            angle_pix = 45
+            kernel,anchor=genaratePsf(lenth_pix, angle_pix)
+            dst2 = cv.filter2D(self.flip_x,-1,kernel,anchor=anchor)
+            lenth_pix = 4
+            angle_pix = 45
+            kernel,anchor=genaratePsf(lenth_pix, angle_pix)
+            dst3 = cv.filter2D(self.flip_y,-1,kernel,anchor=anchor)
+            lenth_pix = 4
+            angle_pix = 45
+            kernel,anchor=genaratePsf(lenth_pix, angle_pix)
+            dst4 = cv.filter2D(self.flip_x_y,-1,kernel,anchor=anchor)
+            
+            cv.imwrite(str(self.id)+'_motion'+'.jpg', dst1)
+            cv.imwrite(str(self.id)+'_flip_x'+'_motion'+'.jpg', dst2)
+            cv.imwrite(str(self.id)+'_flip_y'+'_motion'+'.jpg', dst3)
+            cv.imwrite(str(self.id)+'_flip_x_y'+'_motion'+'.jpg', dst4)
 
     def chg_sharpness_fun(self):
         # 锐度，增强因子为1.0是原始图片
@@ -202,6 +274,13 @@ class DataAugment(object):
             image_names.append(str(self.id)+'_flip_x'+'_Gaussian')
             image_names.append(str(self.id)+'_flip_y' + '_Gaussian')
             image_names.append(str(self.id)+'_flip_x_y'+'_Gaussian')
+            
+        if self.motionBlur:
+            image_names.append(str(self.id)+'_motion')
+            image_names.append(str(self.id)+'_flip_x'+'_motion')
+            image_names.append(str(self.id)+'_flip_y' + '_motion')
+            image_names.append(str(self.id)+'_flip_x_y'+'_motion')
+            
         if self.changeExposure:
             image_names.append(str(self.id)+'_ReduceEp')
             image_names.append(str(self.id)+'_flip_x'+'_ReduceEp')
@@ -280,6 +359,7 @@ if __name__ == "__main__":
         dataAugmentObject.chg_sharpness_fun()
         dataAugmentObject.chg_color_fun()
         dataAugmentObject.chg_contrast_fun()
+        dataAugmentObject.motion_blur_fun()
         #dataAugmentObject.add_salt_noise()
         dataAugmentObject.json_generation()
         i = i + 1
